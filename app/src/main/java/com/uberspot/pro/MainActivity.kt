@@ -1,5 +1,6 @@
 package com.uberspot.pro
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -7,6 +8,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
@@ -33,6 +35,7 @@ class MainActivity : Activity() {
 
         val btnPermOverlay = findViewById<Button>(R.id.btnPermOverlay)
         val btnPermAccess = findViewById<Button>(R.id.btnPermAccess)
+        val btnBattery = findViewById<Button>(R.id.btnBatteryOptimize)
         val btnTestUber = findViewById<Button>(R.id.btnTestUber)
 
         // 1. MASTER SWITCH
@@ -87,7 +90,12 @@ class MainActivity : Activity() {
             Toast.makeText(this, "Activa 'UberSpot Pro' en Accesibilidad", Toast.LENGTH_LONG).show()
         }
 
-        // 4. DIRECT OVERLAY TEST
+        // 4. BATTERY UNRESTRICTED BUTTON (FOR XIAOMI / LONG SHIFTS)
+        btnBattery.setOnClickListener {
+            openBatterySettings()
+        }
+
+        // 5. DIRECT OVERLAY TEST
         btnTestUber.setOnClickListener {
             val srv = RideAccessibilityService.instance
             if (srv != null) {
@@ -109,6 +117,30 @@ class MainActivity : Activity() {
                 val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                 startActivity(intent)
             }
+        }
+    }
+
+    @SuppressLint("BatteryLife")
+    private fun openBatterySettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                try {
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    val appIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:$packageName")
+                    }
+                    startActivity(appIntent)
+                }
+            } else {
+                Toast.makeText(this, "✓ Batería ya configurada en 'Sin Restricciones'", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "No requerido en esta versión de Android", Toast.LENGTH_SHORT).show()
         }
     }
 

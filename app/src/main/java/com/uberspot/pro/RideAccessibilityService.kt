@@ -1,6 +1,9 @@
 package com.uberspot.pro
 
 import android.accessibilityservice.AccessibilityService
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -23,6 +26,8 @@ class RideAccessibilityService : AccessibilityService() {
 
     companion object {
         var instance: RideAccessibilityService? = null
+        const val NOTIFICATION_ID = 1001
+        const val CHANNEL_ID = "uberspot_pro_channel"
     }
 
     private lateinit var prefs: SharedPreferences
@@ -41,12 +46,54 @@ class RideAccessibilityService : AccessibilityService() {
         instance = this
         prefs = getSharedPreferences("UberSpotPrefs", Context.MODE_PRIVATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        
+        setupOngoingNotification()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         instance = null
         removeOverlayView()
+        removeNotification()
+    }
+
+    private fun setupOngoingNotification() {
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    CHANNEL_ID,
+                    "UberSpot Pro Asistente",
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = "Mantiene activo el asistente de viajes durante tu turno"
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Notification.Builder(this, CHANNEL_ID)
+            } else {
+                @Suppress("DEPRECATION")
+                Notification.Builder(this)
+            }.apply {
+                setContentTitle("🟢 UberSpot Pro Activo")
+                setContentText("Monitoreando ofertas de Uber Driver en tiempo real")
+                setSmallIcon(android.R.drawable.ic_menu_compass)
+                setOngoing(true)
+            }.build()
+
+            notificationManager.notify(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun removeNotification() {
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(NOTIFICATION_ID)
+        } catch (e: Exception) {}
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -124,7 +171,6 @@ class RideAccessibilityService : AccessibilityService() {
     private fun parseUberOfferAndEvaluate(rawText: String): Boolean {
         // Normalize all Unicode non-breaking spaces (\u00A0, \u202F, etc.)
         val cleanText = rawText.replace(Regex("[\\u00A0\\u202F\\u2000-\\u200B]"), " ")
-        val lowerText = cleanText.lowercase()
 
         // 1. FARE EXTRACTION
         val lines = cleanText.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
@@ -250,7 +296,7 @@ class RideAccessibilityService : AccessibilityService() {
 
         val fuelPerKm = if (fuelType == "gnv") 200 else 420
         val fuelCost = (totalKm * fuelPerKm).toInt()
-        val commRate = if (lowerText.contains("0% de tarifa")) 0.0 else 0.20
+        val commRate = if (cleanText.lowercase().contains("0% de tarifa")) 0.0 else 0.20
         val commAmount = (fare * commRate).toInt()
         val netProfit = (fare - commAmount - fuelCost).coerceAtLeast(0)
 
@@ -302,12 +348,18 @@ class RideAccessibilityService : AccessibilityService() {
                 windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
             }
 
-            if (overlayView == null) {
-                val inflater = LayoutInflater.from(this)
-                overlayView = inflater.inflate(R.layout.overlay_bubble, null)
-                overlayView?.setOnClickListener {
-                    hideOverlay()
-                }
+            // CLEAN WINDOW LIFECYCLE: Remove previous view if still attached so we always add fresh
+            if (isOverlayAttached && overlayView != null) {
+                try {
+                    windowManager?.removeView(overlayView)
+                } catch (e: Exception) {}
+                isOverlayAttached = false
+            }
+
+            val inflater = LayoutInflater.from(this)
+            overlayView = inflater.inflate(R.layout.overlay_bubble, null)
+            overlayView?.setOnClickListener {
+                hideOverlay()
             }
 
             val pillContainer = overlayView?.findViewById<View>(R.id.pillContainer)
@@ -364,24 +416,21 @@ class RideAccessibilityService : AccessibilityService() {
 
             tvSub?.text = "$appName: \$$fare (\$$netProfit neto) | ~\$${kPerHour}k/h ($kmFormatted km • $min min)"
 
-            if (!isOverlayAttached && overlayView != null) {
-                val params = WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                    PixelFormat.TRANSLUCENT
-                ).apply {
-                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                    y = 80
-                }
-                windowManager?.addView(overlayView, params)
-                isOverlayAttached = true
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                y = 80
             }
 
-            overlayView?.visibility = View.VISIBLE
+            windowManager?.addView(overlayView, params)
+            isOverlayAttached = true
 
             dismissRunnable?.let { mainHandler.removeCallbacks(it) }
             dismissRunnable = Runnable {
@@ -395,13 +444,21 @@ class RideAccessibilityService : AccessibilityService() {
 
     private fun hideOverlay() {
         try {
-            overlayView?.visibility = View.GONE
+            dismissRunnable?.let { mainHandler.removeCallbacks(it) }
+            if (isOverlayAttached && overlayView != null) {
+                windowManager?.removeView(overlayView)
+                isOverlayAttached = false
+            }
             currentOfferKey = "" // Reset offer key so next offer appears immediately
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            isOverlayAttached = false
+            currentOfferKey = ""
+        }
     }
 
     private fun removeOverlayView() {
         try {
+            dismissRunnable?.let { mainHandler.removeCallbacks(it) }
             if (isOverlayAttached && overlayView != null) {
                 windowManager?.removeView(overlayView)
                 isOverlayAttached = false

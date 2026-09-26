@@ -245,7 +245,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔒 PERMISOS REQUERIDOS"
+                android:text="🔒 PERMISOS Y BLINDAJE EN SEGUNDO PLANO"
                 android:textColor="#f59e0b"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -254,7 +254,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Indispensable para leer Uber y proyectar la burbuja:"
+                android:text="Asegura que la app no se cierre sola tras terminar viajes:"
                 android:textColor="#64748b"
                 android:textSize="11sp" />
 
@@ -272,6 +272,19 @@
                 android:textStyle="bold" />
 
             <Button
+                android:id="@+id/btnBatteryOptimize"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_button_dark"
+                android:gravity="start|center_vertical"
+                android:paddingHorizontal="14dp"
+                android:text="2. Batería en 'Sin Restricciones' (Evita cierres en Xiaomi)"
+                android:textColor="#10b981"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <Button
                 android:id="@+id/btnPermOverlay"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
@@ -279,7 +292,7 @@
                 android:background="@drawable/bg_button_dark"
                 android:gravity="start|center_vertical"
                 android:paddingHorizontal="14dp"
-                android:text="2. Permitir Ventana Flotante (Aparecer encima)"
+                android:text="3. Permitir Ventana Flotante (Opcional en Xiaomi)"
                 android:textColor="#cbd5e1"
                 android:textSize="12sp" />
         </LinearLayout>
