@@ -497,7 +497,8 @@ class RideAccessibilityService : AccessibilityService() {
             tvDiffPrice?.text = "+\$$diffPrice"
             tvDiffPrice?.setTextColor(Color.parseColor("#10b981"))
         } else {
-            tvDiffPrice?.text = "-\$$Math.abs(diffPrice)"
+            val absDiff = if (diffPrice < 0) -diffPrice else diffPrice
+            tvDiffPrice?.text = "-\$$absDiff"
             tvDiffPrice?.setTextColor(Color.parseColor("#ef4444"))
         }
 

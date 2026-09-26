@@ -3,7 +3,7 @@
     android:id="@+id/dockContainer"
     android:layout_width="105dp"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_vertical_dock"
+    android:background="@drawable/bg_overlay_hud"
     android:elevation="16dp"
     android:orientation="vertical"
     android:padding="8dp">
