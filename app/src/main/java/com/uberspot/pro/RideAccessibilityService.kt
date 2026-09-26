@@ -93,8 +93,7 @@ class RideAccessibilityService : AccessibilityService() {
             }.build()
 
             notificationManager.notify(NOTIFICATION_ID, notification)
-            
-            // If disabled by driver, hide dock; if enabled, show dock
+
             mainHandler.post {
                 if (isEnabled) {
                     ensureDockAttached()
@@ -126,7 +125,7 @@ class RideAccessibilityService : AccessibilityService() {
         val pkgName = (event.packageName ?: "").toString().lowercase()
         if (!pkgName.contains("uber") && !pkgName.contains("systemui")) return
 
-        // 1. Check event.source first (fastest)
+        // 1. Check event.source first
         var parsed = false
         val sourceNode = event.source
         if (sourceNode != null) {
@@ -257,7 +256,7 @@ class RideAccessibilityService : AccessibilityService() {
 
         if (fare < 4000) return false
 
-        // 2. DISTANCES & TIMES (SEPARATING PICKUP/ORIGIN VS TRIP)
+        // 2. DISTANCES & TIMES (SEPARATING PICKUP VS TRIP)
         var pickupKm = 0.0
         var totalKm = 0.0
         var totalMin = 0
@@ -277,7 +276,6 @@ class RideAccessibilityService : AccessibilityService() {
             val unit = legMatcher1.group(3) ?: "km"
             val legKm = if (unit.equals("m", ignoreCase = true)) d / 1000.0 else d
 
-            // First leg is ALWAYS pickup / origen!
             if (legsFound == 1) {
                 pickupKm = legKm
             }
@@ -360,7 +358,7 @@ class RideAccessibilityService : AccessibilityService() {
         val diffPrice = fare - fairPrice
 
         // VERDICT WITH MAX PICKUP DISTANCE RULE
-        val isPickupTooFar = pickupKm > (maxPickupKm + 0.05) // Tolerance margin
+        val isPickupTooFar = pickupKm > (maxPickupKm + 0.05)
 
         val verdict = when {
             isPickupTooFar -> "REJECT_FAR"
@@ -372,7 +370,8 @@ class RideAccessibilityService : AccessibilityService() {
         // 4. UPDATE DOCK IMMEDIATELY (DIRECT IN-PLACE VIEW UPDATE IN <10MS)
         mainHandler.post {
             updateDockWithOffer(
-                fare = fare,
+                totalKm = totalKm,
+                totalMin = totalMin,
                 pickupKm = pickupKm,
                 perKm = perKm,
                 perMin = perMin,
@@ -410,8 +409,10 @@ class RideAccessibilityService : AccessibilityService() {
                             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                     PixelFormat.TRANSLUCENT
                 ).apply {
-                    gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                    x = 10 // small margin from right edge
+                    // Position at upper-right so it sits above the Uber card without blocking map center
+                    gravity = Gravity.TOP or Gravity.END
+                    y = 120
+                    x = 10
                 }
 
                 windowManager?.addView(overlayView, params)
@@ -423,7 +424,8 @@ class RideAccessibilityService : AccessibilityService() {
     }
 
     fun updateDockWithOffer(
-        fare: Int,
+        totalKm: Double,
+        totalMin: Int,
         pickupKm: Double,
         perKm: Int,
         perMin: Int,
@@ -436,6 +438,8 @@ class RideAccessibilityService : AccessibilityService() {
 
         val dockContainer = overlayView?.findViewById<View>(R.id.dockContainer)
         val tvStatusBadge = overlayView?.findViewById<TextView>(R.id.tvStatusBadge)
+        val tvTotalKm = overlayView?.findViewById<TextView>(R.id.tvTotalKm)
+        val tvTotalMin = overlayView?.findViewById<TextView>(R.id.tvTotalMin)
         val tvOriginDist = overlayView?.findViewById<TextView>(R.id.tvOriginDist)
         val tvPerKm = overlayView?.findViewById<TextView>(R.id.tvPerKm)
         val tvPerMin = overlayView?.findViewById<TextView>(R.id.tvPerMin)
@@ -452,7 +456,7 @@ class RideAccessibilityService : AccessibilityService() {
             }
             "REJECT_FAR" -> {
                 strokeColor = Color.parseColor("#ef4444")
-                tvStatusBadge?.text = "🔴 MUY LEJOS"
+                tvStatusBadge?.text = "🔴 RECHAZAR • LEJOS"
                 tvStatusBadge?.setBackgroundColor(Color.parseColor("#450a0a"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#f87171"))
             }
@@ -470,13 +474,17 @@ class RideAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Dynamic colored border
+        // Dynamic colored border on the mini HUD
         val borderBg = GradientDrawable().apply {
             setColor(Color.parseColor("#0d1424"))
-            setStroke(4, strokeColor)
-            cornerRadius = 32f
+            setStroke(3, strokeColor)
+            cornerRadius = 24f
         }
         dockContainer?.background = borderBg
+
+        // Route Summary: Total Km & Total Min
+        tvTotalKm?.text = String.format(Locale.US, "%.1f km", totalKm)
+        tvTotalMin?.text = "$totalMin min"
 
         // Pickup / Origin distance
         val pickupFormatted = String.format(Locale.US, "%.1f km", pickupKm)
@@ -487,18 +495,18 @@ class RideAccessibilityService : AccessibilityService() {
             tvOriginDist?.setTextColor(Color.parseColor("#10b981"))
         }
 
-        // Metrics
+        // Rates
         tvPerKm?.text = "\$$perKm"
         tvPerMin?.text = "\$$perMin/m"
         tvFairPrice?.text = "\$$fairPrice"
 
         // Balance
         if (diffPrice >= 0) {
-            tvDiffPrice?.text = "+\$$diffPrice"
+            tvDiffPrice?.text = "EXTRA: +\$$diffPrice"
             tvDiffPrice?.setTextColor(Color.parseColor("#10b981"))
         } else {
             val absDiff = if (diffPrice < 0) -diffPrice else diffPrice
-            tvDiffPrice?.text = "-\$$absDiff"
+            tvDiffPrice?.text = "FALTAN: -\$$absDiff"
             tvDiffPrice?.setTextColor(Color.parseColor("#ef4444"))
         }
 
@@ -516,6 +524,8 @@ class RideAccessibilityService : AccessibilityService() {
 
             val dockContainer = overlayView?.findViewById<View>(R.id.dockContainer)
             val tvStatusBadge = overlayView?.findViewById<TextView>(R.id.tvStatusBadge)
+            val tvTotalKm = overlayView?.findViewById<TextView>(R.id.tvTotalKm)
+            val tvTotalMin = overlayView?.findViewById<TextView>(R.id.tvTotalMin)
             val tvOriginDist = overlayView?.findViewById<TextView>(R.id.tvOriginDist)
             val tvPerKm = overlayView?.findViewById<TextView>(R.id.tvPerKm)
             val tvPerMin = overlayView?.findViewById<TextView>(R.id.tvPerMin)
@@ -526,7 +536,7 @@ class RideAccessibilityService : AccessibilityService() {
             val neutralBg = GradientDrawable().apply {
                 setColor(Color.parseColor("#0d1424"))
                 setStroke(2, Color.parseColor("#334155"))
-                cornerRadius = 32f
+                cornerRadius = 24f
             }
             dockContainer?.background = neutralBg
 
@@ -534,19 +544,17 @@ class RideAccessibilityService : AccessibilityService() {
             tvStatusBadge?.setBackgroundColor(Color.parseColor("#1e293b"))
             tvStatusBadge?.setTextColor(Color.parseColor("#94a3b8"))
 
+            tvTotalKm?.text = "0.0 km"
+            tvTotalMin?.text = "0 min"
+
             tvOriginDist?.text = "0.0 km"
             tvOriginDist?.setTextColor(Color.parseColor("#94a3b8"))
 
             tvPerKm?.text = "$0"
-            tvPerKm?.setTextColor(Color.parseColor("#94a3b8"))
-
             tvPerMin?.text = "$0"
-            tvPerMin?.setTextColor(Color.parseColor("#94a3b8"))
-
             tvFairPrice?.text = "$0"
-            tvFairPrice?.setTextColor(Color.parseColor("#94a3b8"))
 
-            tvDiffPrice?.text = "--"
+            tvDiffPrice?.text = "BALANCE: --"
             tvDiffPrice?.setTextColor(Color.parseColor("#64748b"))
 
             currentOfferKey = ""

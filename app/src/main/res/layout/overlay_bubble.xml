@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/dockContainer"
-    android:layout_width="105dp"
+    android:layout_width="145dp"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_overlay_hud"
     android:elevation="16dp"
@@ -15,58 +15,98 @@
         android:layout_height="wrap_content"
         android:background="#1e293b"
         android:gravity="center"
-        android:paddingVertical="4dp"
+        android:paddingVertical="3dp"
         android:text="⚪ EN ESPERA"
         android:textColor="#94a3b8"
         android:textSize="10sp"
         android:textStyle="bold" />
 
-    <!-- BLOCK 1: ORIGIN / PICKUP DISTANCE -->
+    <!-- ROW 1: TOTAL KM & TOTAL MIN (ROUTE SUMMARY) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:orientation="vertical">
+        android:layout_marginTop="5dp"
+        android:background="#131d31"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingVertical="3dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/tvTotalKm"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="ORIGEN"
-            android:textColor="#64748b"
-            android:textSize="9sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05" />
-
-        <TextView
-            android:id="@+id/tvOriginDist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
             android:text="0.0 km"
+            android:textColor="#38bdf8"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="•"
+            android:textColor="#475569"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/tvTotalMin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="0 min"
             android:textColor="#cbd5e1"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginVertical="4dp"
+        android:layout_marginVertical="3dp"
         android:background="#1e293b" />
 
-    <!-- BLOCK 2: RATE PER KM -->
+    <!-- ROW 2: ORIGIN / PICKUP -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="📍 Recogida"
+            android:textColor="#64748b"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/tvOriginDist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="$/KM"
+            android:text="0.0 km"
+            android:textColor="#94a3b8"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ROW 3: RATE PER KM -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="💵 $/Km"
             android:textColor="#64748b"
-            android:textSize="9sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05" />
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/tvPerKm"
@@ -74,30 +114,25 @@
             android:layout_height="wrap_content"
             android:text="$0"
             android:textColor="#38bdf8"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginVertical="4dp"
-        android:background="#1e293b" />
-
-    <!-- BLOCK 3: RATE PER MINUTE -->
+    <!-- ROW 4: RATE PER MINUTE -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_marginTop="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="$/MIN"
+            android:layout_weight="1"
+            android:text="⏱️ $/Min"
             android:textColor="#64748b"
-            android:textSize="9sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05" />
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/tvPerMin"
@@ -105,30 +140,25 @@
             android:layout_height="wrap_content"
             android:text="$0"
             android:textColor="#f8fafc"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginVertical="4dp"
-        android:background="#1e293b" />
-
-    <!-- BLOCK 4: FAIR PRICE -->
+    <!-- ROW 5: FAIR PRICE -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_marginTop="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="JUSTA"
+            android:layout_weight="1"
+            android:text="💡 Justa"
             android:textColor="#64748b"
-            android:textSize="9sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05" />
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/tvFairPrice"
@@ -136,39 +166,25 @@
             android:layout_height="wrap_content"
             android:text="$0"
             android:textColor="#fef08a"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginVertical="4dp"
+        android:layout_marginVertical="3dp"
         android:background="#1e293b" />
 
-    <!-- BLOCK 5: BALANCE / SURPLUS / DEFICIT -->
-    <LinearLayout
+    <!-- ROW 6: BALANCE / FALTANTE / SOBRANTE -->
+    <TextView
+        android:id="@+id/tvDiffPrice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="BALANCE"
-            android:textColor="#64748b"
-            android:textSize="9sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.05" />
-
-        <TextView
-            android:id="@+id/tvDiffPrice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--"
-            android:textColor="#94a3b8"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+        android:gravity="center"
+        android:text="BALANCE: --"
+        android:textColor="#64748b"
+        android:textSize="10sp"
+        android:textStyle="bold" />
 
 </LinearLayout>

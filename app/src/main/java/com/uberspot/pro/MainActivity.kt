@@ -54,7 +54,6 @@ class MainActivity : Activity() {
             prefs.edit().putBoolean("service_enabled", isChecked).apply()
             updateMasterSwitchState(swActive, tvSwitchSub, isChecked)
             
-            // Sync with accessibility service dock and notification
             RideAccessibilityService.instance?.updateStatusNotification(isChecked)
             
             val msg = if (isChecked) "🟢 Asistente ACTIVADO (En Turno)" else "⚪ Asistente PAUSADO (En Descanso)"
@@ -105,18 +104,19 @@ class MainActivity : Activity() {
         btnTestUber.setOnClickListener {
             val srv = RideAccessibilityService.instance
             if (srv != null) {
-                // Test trip from real screenshot: COP 6.525, pickup: 1.6 km, total: 2.1 km, 8 min
+                // Test trip from screenshot: COP 6.679, pickup: 2.5 km, trip: 2.8 km -> total: 5.3 km, 17 min
                 srv.updateDockWithOffer(
-                    fare = 6525,
-                    pickupKm = 1.6,
-                    perKm = 3107,
-                    perMin = 815,
-                    fairPrice = 3800,
-                    diffPrice = 2725,
-                    verdict = "ACCEPT",
-                    isPickupTooFar = false
+                    totalKm = 5.3,
+                    totalMin = 17,
+                    pickupKm = 2.5,
+                    perKm = 1260,
+                    perMin = 392,
+                    fairPrice = 9500,
+                    diffPrice = -2821,
+                    verdict = "REJECT_FAR",
+                    isPickupTooFar = true
                 )
-                Toast.makeText(this, "Simulando oferta en dock lateral (resetea en 15s)...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Simulando oferta en Mini HUD (vuelve a 0 en 15s)...", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "⚠️ Por favor activa primero el 'Servicio de Accesibilidad' abajo", Toast.LENGTH_LONG).show()
                 val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
@@ -153,7 +153,7 @@ class MainActivity : Activity() {
         if (isChecked) {
             sw.text = "🟢 Asistente ACTIVO (En Turno)"
             sw.setTextColor(Color.parseColor("#10b981"))
-            tvSub.text = "Dock lateral activo en pantalla (0ms de delay)"
+            tvSub.text = "Mini HUD activo en pantalla (0ms de delay)"
         } else {
             sw.text = "⚪ Asistente PAUSADO (En Descanso)"
             sw.setTextColor(Color.parseColor("#94a3b8"))
