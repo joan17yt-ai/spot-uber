@@ -36,7 +36,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Asistente Uber Driver"
+                    android:text="Dock Lateral Uber"
                     android:textColor="#ffffff"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -55,7 +55,7 @@
                 android:background="@drawable/bg_button_dark"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="5dp"
-                android:text="UBER EDITION"
+                android:text="DOCK EDITION"
                 android:textColor="#38bdf8"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -94,12 +94,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Monitoreando Uber Driver en vivo (Respuesta en 20ms)"
+                android:text="Ventana lateral fija activa en pantalla (0ms de delay)"
                 android:textColor="#94a3b8"
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- FINANCIAL STRATEGY CARD (OPTION B) -->
+        <!-- FINANCIAL STRATEGY & PICKUP FILTERS -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -118,7 +118,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="⚙️ TUS PARÁMETROS DE GANANCIA"
+                    android:text="🎯 TUS PARÁMETROS DE RENTABILIDAD"
                     android:textColor="#38bdf8"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -139,15 +139,45 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Tarifa Justa calculada por el mayor entre Distancia o Tiempo."
+                android:text="Evalúa distancia, tiempo y cercanía del origen:"
                 android:textColor="#64748b"
                 android:textSize="11sp" />
 
-            <!-- KM RATE -->
+            <!-- FILTER 1: MAX PICKUP DISTANCE -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
+                android:text="📍 Distancia Máxima a Origen / Recogida (Km):"
+                android:textColor="#f8fafc"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Si la recogida supera este límite, la app marcará RECHAZAR"
+                android:textColor="#64748b"
+                android:textSize="11sp" />
+
+            <EditText
+                android:id="@+id/etMaxPickup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_input_field"
+                android:inputType="numberDecimal"
+                android:padding="12dp"
+                android:text="2.5"
+                android:textColor="#38bdf8"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <!-- FILTER 2: MIN RATE KM -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
                 android:text="Tarifa Mínima por Kilómetro (COP):"
                 android:textColor="#cbd5e1"
                 android:textSize="12sp" />
@@ -164,7 +194,7 @@
                 android:textColor="#ffffff"
                 android:textSize="15sp" />
 
-            <!-- MINUTE RATE -->
+            <!-- FILTER 3: MIN RATE MINUTE -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -184,41 +214,6 @@
                 android:text="400"
                 android:textColor="#ffffff"
                 android:textSize="15sp" />
-
-            <!-- FUEL -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Combustible Vehículo:"
-                android:textColor="#cbd5e1"
-                android:textSize="12sp" />
-
-            <RadioGroup
-                android:id="@+id/rgFuel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/rbGnv"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="GNV (~$200/km)"
-                    android:textColor="#ffffff"
-                    android:textSize="13sp" />
-
-                <RadioButton
-                    android:id="@+id/rbGas"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
-                    android:text="Gasolina (~$420/km)"
-                    android:textColor="#ffffff"
-                    android:textSize="13sp" />
-            </RadioGroup>
 
             <!-- SAVE BUTTON -->
             <Button
@@ -254,7 +249,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Asegura que la app no se cierre sola tras terminar viajes:"
+                android:text="Asegura que el dock lateral se dibuje y no se cierre en segundo plano:"
                 android:textColor="#64748b"
                 android:textSize="11sp" />
 
@@ -292,7 +287,7 @@
                 android:background="@drawable/bg_button_dark"
                 android:gravity="start|center_vertical"
                 android:paddingHorizontal="14dp"
-                android:text="3. Permitir Ventana Flotante (Opcional en Xiaomi)"
+                android:text="3. Permitir Ventana Flotante (Aparecer encima)"
                 android:textColor="#cbd5e1"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -318,7 +313,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Toca el botón para probar la burbuja flotante ahora mismo:"
+                android:text="Simula una oferta en la ventana lateral (vuelve a 0 en 10s):"
                 android:textColor="#64748b"
                 android:textSize="11sp" />
 
@@ -328,7 +323,7 @@
                 android:layout_height="46dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_button_dark"
-                android:text="🚗 Probar Burbuja Flotante en Pantalla"
+                android:text="🚗 Simular Oferta en Dock Lateral"
                 android:textColor="#10b981"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -339,7 +334,7 @@
             android:layout_height="wrap_content"
             android:layout_marginVertical="24dp"
             android:gravity="center"
-            android:text="Optimizado para Uber Driver • Bucaramanga"
+            android:text="UberSpot Pro • Dock Lateral • Bucaramanga"
             android:textColor="#475569"
             android:textSize="11sp" />
 

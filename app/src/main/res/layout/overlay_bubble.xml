@@ -1,79 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/pillContainer"
-    android:layout_width="match_parent"
+    android:id="@+id/dockContainer"
+    android:layout_width="105dp"
     android:layout_height="wrap_content"
-    android:layout_margin="12dp"
-    android:background="@drawable/bg_overlay_hud"
+    android:background="@drawable/bg_vertical_dock"
     android:elevation="16dp"
     android:orientation="vertical"
-    android:padding="14dp">
+    android:padding="8dp">
 
-    <!-- TOP ROW: APP BADGE + VERDICT + RATE -->
-    <LinearLayout
+    <!-- STATUS BADGE -->
+    <TextView
+        android:id="@+id/tvStatusBadge"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:background="#1e293b"
+        android:gravity="center"
+        android:paddingVertical="4dp"
+        android:text="⚪ EN ESPERA"
+        android:textColor="#94a3b8"
+        android:textSize="10sp"
+        android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tvAppBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_badge_app"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="3dp"
-            android:text="DIDI"
-            android:textColor="#ffffff"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvVerdictTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="🟢 ACEPTAR • $2.150 / km"
-            android:textColor="#ffffff"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="✕"
-            android:textColor="#64748b"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- FAIR PRICE ROW (OPCIÓN B) -->
+    <!-- BLOCK 1: ORIGIN / PICKUP DISTANCE -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ORIGEN"
+            android:textColor="#64748b"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
+
+        <TextView
+            android:id="@+id/tvOriginDist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.0 km"
+            android:textColor="#cbd5e1"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="4dp"
+        android:background="#1e293b" />
+
+    <!-- BLOCK 2: RATE PER KM -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$/KM"
+            android:textColor="#64748b"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
+
+        <TextView
+            android:id="@+id/tvPerKm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$0"
+            android:textColor="#38bdf8"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="4dp"
+        android:background="#1e293b" />
+
+    <!-- BLOCK 3: RATE PER MINUTE -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$/MIN"
+            android:textColor="#64748b"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
+
+        <TextView
+            android:id="@+id/tvPerMin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$0"
+            android:textColor="#f8fafc"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="4dp"
+        android:background="#1e293b" />
+
+    <!-- BLOCK 4: FAIR PRICE -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="JUSTA"
+            android:textColor="#64748b"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
 
         <TextView
             android:id="@+id/tvFairPrice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="💡 Tarifa Justa: $18.000 (¡Paga excelente!)"
+            android:text="$0"
             android:textColor="#fef08a"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- TRIP METRICS ROW -->
-    <TextView
-        android:id="@+id/tvVerdictSub"
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="4dp"
+        android:background="#1e293b" />
+
+    <!-- BLOCK 5: BALANCE / SURPLUS / DEFICIT -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Oferta: $18.500 ($13.200 neto) | ~$28k/h (8.5 km • 22 min)"
-        android:textColor="#cbd5e1"
-        android:textSize="12sp" />
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BALANCE"
+            android:textColor="#64748b"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
+
+        <TextView
+            android:id="@+id/tvDiffPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--"
+            android:textColor="#94a3b8"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 </LinearLayout>

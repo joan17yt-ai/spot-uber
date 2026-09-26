@@ -35,9 +35,9 @@ class RideAccessibilityService : AccessibilityService() {
     private var overlayView: View? = null
     private var isOverlayAttached = false
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var dismissRunnable: Runnable? = null
+    private var resetRunnable: Runnable? = null
 
-    // Tracks currently displayed offer to avoid re-rendering identical trip
+    // Track active offer to avoid redundant calculations
     private var currentOfferKey = ""
     private var lastProcessTime = 0L
 
@@ -46,8 +46,14 @@ class RideAccessibilityService : AccessibilityService() {
         instance = this
         prefs = getSharedPreferences("UberSpotPrefs", Context.MODE_PRIVATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        
-        setupOngoingNotification()
+
+        updateStatusNotification(prefs.getBoolean("service_enabled", true))
+
+        // Attach always-fixed dock immediately in idle/zero state
+        mainHandler.post {
+            ensureDockAttached()
+            resetDockToIdle()
+        }
     }
 
     override fun onDestroy() {
@@ -57,7 +63,7 @@ class RideAccessibilityService : AccessibilityService() {
         removeNotification()
     }
 
-    private fun setupOngoingNotification() {
+    fun updateStatusNotification(isEnabled: Boolean) {
         try {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -71,19 +77,32 @@ class RideAccessibilityService : AccessibilityService() {
                 notificationManager.createNotificationChannel(channel)
             }
 
+            val title = if (isEnabled) "🟢 UberSpot Pro Activo" else "⚪ UberSpot Pro Pausado"
+            val text = if (isEnabled) "Dock lateral Uber activo en tiempo real" else "Asistente en descanso. Cero consumo de batería."
+
             val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Notification.Builder(this, CHANNEL_ID)
             } else {
                 @Suppress("DEPRECATION")
                 Notification.Builder(this)
             }.apply {
-                setContentTitle("🟢 UberSpot Pro Activo")
-                setContentText("Monitoreando ofertas de Uber Driver en tiempo real")
+                setContentTitle(title)
+                setContentText(text)
                 setSmallIcon(android.R.drawable.ic_menu_compass)
-                setOngoing(true)
+                setOngoing(isEnabled)
             }.build()
 
             notificationManager.notify(NOTIFICATION_ID, notification)
+            
+            // If disabled by driver, hide dock; if enabled, show dock
+            mainHandler.post {
+                if (isEnabled) {
+                    ensureDockAttached()
+                    resetDockToIdle()
+                } else {
+                    removeOverlayView()
+                }
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -99,16 +118,15 @@ class RideAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        // 1. Instant check: Is assistant enabled?
         if (!prefs.getBoolean("service_enabled", true)) return
 
         val now = System.currentTimeMillis()
-        if (now - lastProcessTime < 30) return // Ultra-responsive 30ms throttle
+        if (now - lastProcessTime < 30) return // 30ms fast path
 
         val pkgName = (event.packageName ?: "").toString().lowercase()
         if (!pkgName.contains("uber") && !pkgName.contains("systemui")) return
 
-        // 2. Fast Path: First check event.source (immediately available when card pops up)
+        // 1. Check event.source first (fastest)
         var parsed = false
         val sourceNode = event.source
         if (sourceNode != null) {
@@ -120,7 +138,7 @@ class RideAccessibilityService : AccessibilityService() {
             }
         }
 
-        // 3. Fallback: If event.source didn't have the full offer, check rootInActiveWindow
+        // 2. Fallback to rootInActiveWindow
         if (!parsed) {
             val rootNode = rootInActiveWindow
             if (rootNode != null) {
@@ -145,9 +163,14 @@ class RideAccessibilityService : AccessibilityService() {
                 lower.contains("uberx") ||
                 lower.contains("comfort") ||
                 lower.contains("flash") ||
+                lower.contains("moto") ||
+                lower.contains("prioridad") ||
+                lower.contains("priority") ||
                 lower.contains("me interesa") ||
+                lower.contains("aceptar") ||
                 lower.contains("viaje:") ||
                 lower.contains("(estimado)") ||
+                lower.contains("recogida") ||
                 lower.contains("contrato de renta")) &&
                (lower.contains("cop") || lower.contains("$") || lower.contains("km"))
     }
@@ -169,14 +192,13 @@ class RideAccessibilityService : AccessibilityService() {
     }
 
     private fun parseUberOfferAndEvaluate(rawText: String): Boolean {
-        // Normalize all Unicode non-breaking spaces (\u00A0, \u202F, etc.)
         val cleanText = rawText.replace(Regex("[\\u00A0\\u202F\\u2000-\\u200B]"), " ")
 
         // 1. FARE EXTRACTION
         val lines = cleanText.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
         var fare = 0
 
-        // Strategy A: Trip fare is the line right before '(estimado)' or '/km'
+        // Strategy A: Trip fare right before '(estimado)' or '/km'
         for (idx in 0 until lines.size - 1) {
             val curr = lines[idx]
             val nxt = lines[idx + 1].lowercase()
@@ -193,12 +215,12 @@ class RideAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Strategy B: Line immediately following category name
+        // Strategy B: Line after category
         if (fare == 0) {
             for (idx in 0 until lines.size - 1) {
                 val curr = lines[idx].lowercase()
                 if (curr.contains("economy") || curr.contains("uberx") || curr.contains("comfort") ||
-                    curr.contains("flash") || curr.contains("moto")) {
+                    curr.contains("flash") || curr.contains("moto") || curr.contains("prioridad")) {
                     val nxt = lines[idx + 1]
                     val m = Pattern.compile("(?:COP|\\$)?\\s*([0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]{4,6})", Pattern.CASE_INSENSITIVE).matcher(nxt)
                     if (m.find()) {
@@ -213,7 +235,7 @@ class RideAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Strategy C: Scan from bottom of lines
+        // Strategy C: Bottom-up line scan
         if (fare == 0) {
             for (i in lines.size - 1 downTo 0) {
                 val line = lines[i]
@@ -235,44 +257,79 @@ class RideAccessibilityService : AccessibilityService() {
 
         if (fare < 4000) return false
 
-        // 2. DISTANCES & TIMES
+        // 2. DISTANCES & TIMES (SEPARATING PICKUP/ORIGIN VS TRIP)
+        var pickupKm = 0.0
         var totalKm = 0.0
         var totalMin = 0
 
-        // Combined: "X min (Y km)" or "X min (Y m)"
-        val legMatcher = Pattern.compile(
+        // Combined Pattern 1: "X min (Y km)" or "X min (Y m)"
+        val legMatcher1 = Pattern.compile(
             "([0-9]+)\\s*min(?:uto)?s?\\s*\\(\\s*([0-9]+(?:[.,][0-9]+)?)\\s*(km|m)\\s*\\)",
             Pattern.CASE_INSENSITIVE
         ).matcher(cleanText)
 
         var legsFound = 0
-        while (legMatcher.find()) {
+        while (legMatcher1.find()) {
             legsFound++
-            val m = legMatcher.group(1)?.toIntOrNull() ?: 0
-            val dStr = legMatcher.group(2)?.replace(",", ".") ?: "0"
+            val m = legMatcher1.group(1)?.toIntOrNull() ?: 0
+            val dStr = legMatcher1.group(2)?.replace(",", ".") ?: "0"
             val d = dStr.toDoubleOrNull() ?: 0.0
-            val unit = legMatcher.group(3) ?: "km"
+            val unit = legMatcher1.group(3) ?: "km"
+            val legKm = if (unit.equals("m", ignoreCase = true)) d / 1000.0 else d
+
+            // First leg is ALWAYS pickup / origen!
+            if (legsFound == 1) {
+                pickupKm = legKm
+            }
 
             totalMin += m
-            if (unit.equals("m", ignoreCase = true)) {
-                totalKm += d / 1000.0
-            } else {
-                totalKm += d
+            totalKm += legKm
+        }
+
+        // Fallback Pattern 2: "Y km (X min)"
+        if (legsFound == 0) {
+            val legMatcher2 = Pattern.compile(
+                "([0-9]+(?:[.,][0-9]+)?)\\s*(km|m)\\s*\\(\\s*([0-9]+)\\s*min(?:uto)?s?\\s*\\)",
+                Pattern.CASE_INSENSITIVE
+            ).matcher(cleanText)
+            while (legMatcher2.find()) {
+                legsFound++
+                val dStr = legMatcher2.group(1)?.replace(",", ".") ?: "0"
+                val d = dStr.toDoubleOrNull() ?: 0.0
+                val unit = legMatcher2.group(2) ?: "km"
+                val m = legMatcher2.group(3)?.toIntOrNull() ?: 0
+                val legKm = if (unit.equals("m", ignoreCase = true)) d / 1000.0 else d
+
+                if (legsFound == 1) {
+                    pickupKm = legKm
+                }
+
+                totalMin += m
+                totalKm += legKm
             }
         }
 
-        // Fallback to separate tokens
+        // Token fallback
         if (legsFound == 0) {
             val kmMatcher = Pattern.compile("([0-9]+(?:[.,][0-9]+)?)\\s*(?:km|kms)\\b", Pattern.CASE_INSENSITIVE).matcher(cleanText)
+            var kCount = 0
             while (kmMatcher.find()) {
+                kCount++
                 val d = kmMatcher.group(1)?.replace(",", ".")?.toDoubleOrNull() ?: 0.0
-                if (d in 0.4..70.0) totalKm += d
+                if (d in 0.4..70.0) {
+                    if (kCount == 1) pickupKm = d
+                    totalKm += d
+                }
             }
 
             val mMatcher = Pattern.compile("([0-9]{2,4})\\s*(?:m|metros)\\b", Pattern.CASE_INSENSITIVE).matcher(cleanText)
             while (mMatcher.find()) {
                 val mVal = mMatcher.group(1)?.toDoubleOrNull() ?: 0.0
-                if (mVal in 50.0..2500.0) totalKm += mVal / 1000.0
+                if (mVal in 50.0..2500.0) {
+                    val mKm = mVal / 1000.0
+                    if (pickupKm == 0.0) pickupKm = mKm
+                    totalKm += mKm
+                }
             }
 
             val minMatcher = Pattern.compile("([0-9]{1,3})\\s*(?:min|mins|minuto|minutos)\\b", Pattern.CASE_INSENSITIVE).matcher(cleanText)
@@ -284,181 +341,222 @@ class RideAccessibilityService : AccessibilityService() {
 
         if (totalKm <= 0.0) return false
 
-        // Check if this exact offer is already shown
         val offerKey = "$fare-$totalKm-$totalMin"
         if (offerKey == currentOfferKey) return true
         currentOfferKey = offerKey
 
-        // 3. FINANCIAL CALCULATION - OPCIÓN B (MAYOR ENTRE KM Y TIEMPO)
+        // 3. FINANCIAL CALCULATIONS - OPCION B & MAX PICKUP FILTER
         val minRateKm = prefs.getInt("min_rate_km", 1800)
         val minRateMin = prefs.getInt("min_rate_min", 400)
-        val fuelType = prefs.getString("fuel_type", "gnv") ?: "gnv"
-
-        val fuelPerKm = if (fuelType == "gnv") 200 else 420
-        val fuelCost = (totalKm * fuelPerKm).toInt()
-        val commRate = if (cleanText.lowercase().contains("0% de tarifa")) 0.0 else 0.20
-        val commAmount = (fare * commRate).toInt()
-        val netProfit = (fare - commAmount - fuelCost).coerceAtLeast(0)
+        val maxPickupKm = prefs.getFloat("max_pickup_km", 2.5f)
 
         val perKm = (fare / totalKm).toInt()
-        val netPerHour = if (totalMin > 0) ((netProfit.toDouble() / totalMin) * 60).toInt() else 0
+        val perMin = if (totalMin > 0) (fare / totalMin) else 0
 
         val targetKmFare = (totalKm * minRateKm).toInt()
         val targetMinFare = (totalMin * minRateMin).toInt()
         val rawFairPrice = maxOf(targetKmFare, targetMinFare)
         val fairPrice = (Math.round(rawFairPrice / 100.0) * 100).toInt()
+        val diffPrice = fare - fairPrice
+
+        // VERDICT WITH MAX PICKUP DISTANCE RULE
+        val isPickupTooFar = pickupKm > (maxPickupKm + 0.05) // Tolerance margin
 
         val verdict = when {
+            isPickupTooFar -> "REJECT_FAR"
             fare >= fairPrice && perKm >= minRateKm -> "ACCEPT"
             perKm >= (minRateKm * 0.85) -> "REGULAR"
             else -> "REJECT"
         }
 
-        // 4. DISPLAY FLOATING OVERLAY IMMEDIATELY (ZERO DELAY)
+        // 4. UPDATE DOCK IMMEDIATELY (DIRECT IN-PLACE VIEW UPDATE IN <10MS)
         mainHandler.post {
-            showOverlayDirect(
-                appName = "Uber",
+            updateDockWithOffer(
                 fare = fare,
+                pickupKm = pickupKm,
                 perKm = perKm,
-                netPerHour = netPerHour,
-                km = totalKm,
-                min = totalMin,
+                perMin = perMin,
+                fairPrice = fairPrice,
+                diffPrice = diffPrice,
                 verdict = verdict,
-                netProfit = netProfit,
-                fairPrice = fairPrice
+                isPickupTooFar = isPickupTooFar
             )
         }
 
         return true
     }
 
-    fun showOverlayDirect(
-        appName: String,
-        fare: Int,
-        perKm: Int,
-        netPerHour: Int,
-        km: Double,
-        min: Int,
-        verdict: String,
-        netProfit: Int,
-        fairPrice: Int
-    ) {
+    private fun ensureDockAttached() {
         try {
             if (windowManager == null) {
                 windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
             }
 
-            // CLEAN WINDOW LIFECYCLE: Remove previous view if still attached so we always add fresh
-            if (isOverlayAttached && overlayView != null) {
-                try {
-                    windowManager?.removeView(overlayView)
-                } catch (e: Exception) {}
-                isOverlayAttached = false
-            }
-
-            val inflater = LayoutInflater.from(this)
-            overlayView = inflater.inflate(R.layout.overlay_bubble, null)
-            overlayView?.setOnClickListener {
-                hideOverlay()
-            }
-
-            val pillContainer = overlayView?.findViewById<View>(R.id.pillContainer)
-            val tvAppBadge = overlayView?.findViewById<TextView>(R.id.tvAppBadge)
-            val tvTitle = overlayView?.findViewById<TextView>(R.id.tvVerdictTitle)
-            val tvFair = overlayView?.findViewById<TextView>(R.id.tvFairPrice)
-            val tvSub = overlayView?.findViewById<TextView>(R.id.tvVerdictSub)
-
-            tvAppBadge?.text = "UBER"
-            val badgeBg = GradientDrawable().apply {
-                setColor(Color.parseColor("#0f172a"))
-                setStroke(2, Color.parseColor("#cbd5e1"))
-                cornerRadius = 14f
-            }
-            tvAppBadge?.background = badgeBg
-
-            val kmFormatted = String.format(Locale.US, "%.1f", km)
-            val kPerHour = netPerHour / 1000
-            val diffPrice = fairPrice - fare
-
-            val strokeColor: Int
-            when (verdict) {
-                "ACCEPT" -> {
-                    strokeColor = Color.parseColor("#10b981")
-                    tvTitle?.text = "🟢 ACEPTAR • \$$perKm / km"
-                    tvTitle?.setTextColor(Color.parseColor("#34d399"))
-                    tvFair?.text = "💡 Tarifa Justa: \$$fairPrice (¡Paga excelente!)"
-                    tvFair?.setTextColor(Color.parseColor("#a7f3d0"))
-                }
-                "REJECT" -> {
-                    strokeColor = Color.parseColor("#ef4444")
-                    tvTitle?.text = "🔴 RECHAZAR • \$$perKm / km"
-                    tvTitle?.setTextColor(Color.parseColor("#f87171"))
-                    val diffText = if (diffPrice > 0) " (Faltan \$$diffPrice)" else ""
-                    tvFair?.text = "💡 Debería pagar: \$$fairPrice$diffText"
-                    tvFair?.setTextColor(Color.parseColor("#fef08a"))
-                }
-                else -> {
-                    strokeColor = Color.parseColor("#f59e0b")
-                    tvTitle?.text = "🟡 REGULAR • \$$perKm / km"
-                    tvTitle?.setTextColor(Color.parseColor("#fbbf24"))
-                    val diffText = if (diffPrice > 0) " (Faltan \$$diffPrice)" else ""
-                    tvFair?.text = "💡 Debería pagar: \$$fairPrice$diffText"
-                    tvFair?.setTextColor(Color.parseColor("#ffffff"))
+            if (overlayView == null) {
+                val inflater = LayoutInflater.from(this)
+                overlayView = inflater.inflate(R.layout.overlay_bubble, null)
+                overlayView?.setOnClickListener {
+                    resetDockToIdle()
                 }
             }
 
-            val containerDrawable = GradientDrawable().apply {
-                setColor(Color.parseColor("#0f172a"))
-                setStroke(4, strokeColor)
-                cornerRadius = 32f
+            if (!isOverlayAttached && overlayView != null) {
+                val params = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT
+                ).apply {
+                    gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                    x = 10 // small margin from right edge
+                }
+
+                windowManager?.addView(overlayView, params)
+                isOverlayAttached = true
             }
-            pillContainer?.background = containerDrawable
-
-            tvSub?.text = "$appName: \$$fare (\$$netProfit neto) | ~\$${kPerHour}k/h ($kmFormatted km • $min min)"
-
-            val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-            ).apply {
-                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                y = 80
-            }
-
-            windowManager?.addView(overlayView, params)
-            isOverlayAttached = true
-
-            dismissRunnable?.let { mainHandler.removeCallbacks(it) }
-            dismissRunnable = Runnable {
-                hideOverlay()
-            }
-            mainHandler.postDelayed(dismissRunnable!!, 15000)
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private fun hideOverlay() {
-        try {
-            dismissRunnable?.let { mainHandler.removeCallbacks(it) }
-            if (isOverlayAttached && overlayView != null) {
-                windowManager?.removeView(overlayView)
-                isOverlayAttached = false
+    fun updateDockWithOffer(
+        fare: Int,
+        pickupKm: Double,
+        perKm: Int,
+        perMin: Int,
+        fairPrice: Int,
+        diffPrice: Int,
+        verdict: String,
+        isPickupTooFar: Boolean
+    ) {
+        ensureDockAttached()
+
+        val dockContainer = overlayView?.findViewById<View>(R.id.dockContainer)
+        val tvStatusBadge = overlayView?.findViewById<TextView>(R.id.tvStatusBadge)
+        val tvOriginDist = overlayView?.findViewById<TextView>(R.id.tvOriginDist)
+        val tvPerKm = overlayView?.findViewById<TextView>(R.id.tvPerKm)
+        val tvPerMin = overlayView?.findViewById<TextView>(R.id.tvPerMin)
+        val tvFairPrice = overlayView?.findViewById<TextView>(R.id.tvFairPrice)
+        val tvDiffPrice = overlayView?.findViewById<TextView>(R.id.tvDiffPrice)
+
+        val strokeColor: Int
+        when (verdict) {
+            "ACCEPT" -> {
+                strokeColor = Color.parseColor("#10b981")
+                tvStatusBadge?.text = "🟢 ACEPTAR"
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#064e3b"))
+                tvStatusBadge?.setTextColor(Color.parseColor("#34d399"))
             }
-            currentOfferKey = "" // Reset offer key so next offer appears immediately
-        } catch (e: Exception) {
-            isOverlayAttached = false
+            "REJECT_FAR" -> {
+                strokeColor = Color.parseColor("#ef4444")
+                tvStatusBadge?.text = "🔴 MUY LEJOS"
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#450a0a"))
+                tvStatusBadge?.setTextColor(Color.parseColor("#f87171"))
+            }
+            "REJECT" -> {
+                strokeColor = Color.parseColor("#ef4444")
+                tvStatusBadge?.text = "🔴 RECHAZAR"
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#450a0a"))
+                tvStatusBadge?.setTextColor(Color.parseColor("#f87171"))
+            }
+            else -> {
+                strokeColor = Color.parseColor("#f59e0b")
+                tvStatusBadge?.text = "🟡 REGULAR"
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#451a03"))
+                tvStatusBadge?.setTextColor(Color.parseColor("#fbbf24"))
+            }
+        }
+
+        // Dynamic colored border
+        val borderBg = GradientDrawable().apply {
+            setColor(Color.parseColor("#0d1424"))
+            setStroke(4, strokeColor)
+            cornerRadius = 32f
+        }
+        dockContainer?.background = borderBg
+
+        // Pickup / Origin distance
+        val pickupFormatted = String.format(Locale.US, "%.1f km", pickupKm)
+        tvOriginDist?.text = pickupFormatted
+        if (isPickupTooFar) {
+            tvOriginDist?.setTextColor(Color.parseColor("#ef4444"))
+        } else {
+            tvOriginDist?.setTextColor(Color.parseColor("#10b981"))
+        }
+
+        // Metrics
+        tvPerKm?.text = "\$$perKm"
+        tvPerMin?.text = "\$$perMin/m"
+        tvFairPrice?.text = "\$$fairPrice"
+
+        // Balance
+        if (diffPrice >= 0) {
+            tvDiffPrice?.text = "+\$$diffPrice"
+            tvDiffPrice?.setTextColor(Color.parseColor("#10b981"))
+        } else {
+            tvDiffPrice?.text = "-\$$Math.abs(diffPrice)"
+            tvDiffPrice?.setTextColor(Color.parseColor("#ef4444"))
+        }
+
+        // 15 seconds auto-reset back to zero/idle
+        resetRunnable?.let { mainHandler.removeCallbacks(it) }
+        resetRunnable = Runnable {
+            resetDockToIdle()
+        }
+        mainHandler.postDelayed(resetRunnable!!, 15000)
+    }
+
+    fun resetDockToIdle() {
+        try {
+            ensureDockAttached()
+
+            val dockContainer = overlayView?.findViewById<View>(R.id.dockContainer)
+            val tvStatusBadge = overlayView?.findViewById<TextView>(R.id.tvStatusBadge)
+            val tvOriginDist = overlayView?.findViewById<TextView>(R.id.tvOriginDist)
+            val tvPerKm = overlayView?.findViewById<TextView>(R.id.tvPerKm)
+            val tvPerMin = overlayView?.findViewById<TextView>(R.id.tvPerMin)
+            val tvFairPrice = overlayView?.findViewById<TextView>(R.id.tvFairPrice)
+            val tvDiffPrice = overlayView?.findViewById<TextView>(R.id.tvDiffPrice)
+
+            // Neutral border
+            val neutralBg = GradientDrawable().apply {
+                setColor(Color.parseColor("#0d1424"))
+                setStroke(2, Color.parseColor("#334155"))
+                cornerRadius = 32f
+            }
+            dockContainer?.background = neutralBg
+
+            tvStatusBadge?.text = "⚪ EN ESPERA"
+            tvStatusBadge?.setBackgroundColor(Color.parseColor("#1e293b"))
+            tvStatusBadge?.setTextColor(Color.parseColor("#94a3b8"))
+
+            tvOriginDist?.text = "0.0 km"
+            tvOriginDist?.setTextColor(Color.parseColor("#94a3b8"))
+
+            tvPerKm?.text = "$0"
+            tvPerKm?.setTextColor(Color.parseColor("#94a3b8"))
+
+            tvPerMin?.text = "$0"
+            tvPerMin?.setTextColor(Color.parseColor("#94a3b8"))
+
+            tvFairPrice?.text = "$0"
+            tvFairPrice?.setTextColor(Color.parseColor("#94a3b8"))
+
+            tvDiffPrice?.text = "--"
+            tvDiffPrice?.setTextColor(Color.parseColor("#64748b"))
+
             currentOfferKey = ""
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     private fun removeOverlayView() {
         try {
-            dismissRunnable?.let { mainHandler.removeCallbacks(it) }
+            resetRunnable?.let { mainHandler.removeCallbacks(it) }
             if (isOverlayAttached && overlayView != null) {
                 windowManager?.removeView(overlayView)
                 isOverlayAttached = false
