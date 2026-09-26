@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pillContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="12dp"
+    android:background="@drawable/bg_overlay_hud"
+    android:elevation="16dp"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- TOP ROW: APP BADGE + VERDICT + RATE -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvAppBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_badge_app"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="DIDI"
+            android:textColor="#ffffff"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvVerdictTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="🟢 ACEPTAR • $2.150 / km"
+            android:textColor="#ffffff"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✕"
+            android:textColor="#64748b"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- FAIR PRICE ROW (OPCIÓN B) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvFairPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💡 Tarifa Justa: $18.000 (¡Paga excelente!)"
+            android:textColor="#fef08a"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- TRIP METRICS ROW -->
+    <TextView
+        android:id="@+id/tvVerdictSub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Oferta: $18.500 ($13.200 neto) | ~$28k/h (8.5 km • 22 min)"
+        android:textColor="#cbd5e1"
+        android:textSize="12sp" />
+
+</LinearLayout>
