@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.view.MotionEvent
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
@@ -33,7 +35,16 @@ class RideAccessibilityService : AccessibilityService() {
     private lateinit var prefs: SharedPreferences
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
+    private var overlayLayoutParams: WindowManager.LayoutParams? = null
     private var isOverlayAttached = false
+    private var isCollapsed = false
+
+    // Drag and drop tracking
+    private var initialX = 0
+    private var initialY = 0
+    private var initialTouchX = 0f
+    private var initialTouchY = 0f
+    private var isDragging = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private var resetRunnable: Runnable? = null
 
@@ -394,14 +405,31 @@ class RideAccessibilityService : AccessibilityService() {
             if (overlayView == null) {
                 val inflater = LayoutInflater.from(this)
                 overlayView = inflater.inflate(R.layout.overlay_bubble, null)
-                overlayView?.setOnClickListener {
-                    resetDockToIdle()
+
+                val cardContainer = overlayView?.findViewById<View>(R.id.dockContainer)
+                val bubbleContainer = overlayView?.findViewById<View>(R.id.bubbleContainer)
+                val btnMinimize = overlayView?.findViewById<View>(R.id.btnMinimize)
+
+                btnMinimize?.setOnClickListener {
+                    toggleCollapse(true)
+                }
+
+                if (cardContainer != null) {
+                    setupDragListener(cardContainer, isBubble = false)
+                }
+                if (bubbleContainer != null) {
+                    setupDragListener(bubbleContainer, isBubble = true)
                 }
             }
 
             if (!isOverlayAttached && overlayView != null) {
+                val density = resources.displayMetrics.density
+                val screenWidth = resources.displayMetrics.widthPixels
+                val screenHeight = resources.displayMetrics.heightPixels
+                val cardWidthPx = (142 * density).toInt()
+
                 val params = WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    cardWidthPx,
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -409,15 +437,112 @@ class RideAccessibilityService : AccessibilityService() {
                             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                     PixelFormat.TRANSLUCENT
                 ).apply {
-                    // Position at upper-right so it sits above the Uber card without blocking map center
-                    gravity = Gravity.TOP or Gravity.END
-                    y = 120
-                    x = 10
+                    gravity = Gravity.TOP or Gravity.START
+                    // Position at upper-right where user drew the green rectangle
+                    x = (screenWidth - cardWidthPx - (8 * density).toInt()).coerceAtLeast(0)
+                    y = (screenHeight * 0.32f).toInt()
                 }
+                overlayLayoutParams = params
 
                 windowManager?.addView(overlayView, params)
                 isOverlayAttached = true
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun setupDragListener(view: View, isBubble: Boolean) {
+        view.setOnTouchListener { v, event ->
+            val params = overlayLayoutParams ?: return@setOnTouchListener false
+            val density = resources.displayMetrics.density
+            val screenWidth = resources.displayMetrics.widthPixels
+            val screenHeight = resources.displayMetrics.heightPixels
+
+            if (!isBubble) {
+                val btnMin = overlayView?.findViewById<View>(R.id.btnMinimize)
+                if (btnMin != null) {
+                    val rect = Rect()
+                    btnMin.getGlobalVisibleRect(rect)
+                    if (rect.contains(event.rawX.toInt(), event.rawY.toInt())) {
+                        if (event.action == MotionEvent.ACTION_UP) {
+                            toggleCollapse(true)
+                        }
+                        return@setOnTouchListener true
+                    }
+                }
+            }
+
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = params.x
+                    initialY = params.y
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    isDragging = false
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.rawX - initialTouchX
+                    val dy = event.rawY - initialTouchY
+                    if (Math.hypot(dx.toDouble(), dy.toDouble()) > 10f) {
+                        isDragging = true
+                    }
+                    if (isDragging) {
+                        val currentWidth = if (isBubble) (48 * density).toInt() else (142 * density).toInt()
+                        params.x = (initialX + dx).toInt().coerceIn(0, (screenWidth - currentWidth).coerceAtLeast(0))
+                        params.y = (initialY + dy).toInt().coerceIn(0, (screenHeight - 120).coerceAtLeast(0))
+                        windowManager?.updateViewLayout(overlayView, params)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (!isDragging) {
+                        if (isBubble) {
+                            toggleCollapse(false)
+                        } else {
+                            v.performClick()
+                        }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    fun toggleCollapse(collapse: Boolean) {
+        try {
+            isCollapsed = collapse
+            val cardContainer = overlayView?.findViewById<View>(R.id.dockContainer)
+            val bubbleContainer = overlayView?.findViewById<View>(R.id.bubbleContainer)
+            val params = overlayLayoutParams ?: return
+            val density = resources.displayMetrics.density
+            val screenWidth = resources.displayMetrics.widthPixels
+
+            if (collapse) {
+                cardContainer?.visibility = View.GONE
+                bubbleContainer?.visibility = View.VISIBLE
+                val bubbleSize = (48 * density).toInt()
+                params.width = bubbleSize
+                params.height = bubbleSize
+                // Dock to right or left edge nicely
+                if (params.x > screenWidth / 2) {
+                    params.x = screenWidth - bubbleSize - (6 * density).toInt()
+                } else {
+                    params.x = (6 * density).toInt()
+                }
+            } else {
+                bubbleContainer?.visibility = View.GONE
+                cardContainer?.visibility = View.VISIBLE
+                val cardWidth = (142 * density).toInt()
+                params.width = cardWidth
+                params.height = WindowManager.LayoutParams.WRAP_CONTENT
+                if (params.x + cardWidth > screenWidth) {
+                    params.x = (screenWidth - cardWidth - (6 * density).toInt()).coerceAtLeast(0)
+                }
+            }
+            windowManager?.updateViewLayout(overlayView, params)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -436,8 +561,15 @@ class RideAccessibilityService : AccessibilityService() {
     ) {
         ensureDockAttached()
 
+        // Auto-expand if collapsed so driver immediately sees offer analysis
+        if (isCollapsed) {
+            toggleCollapse(false)
+        }
+
         val dockContainer = overlayView?.findViewById<View>(R.id.dockContainer)
+        val bubbleContainer = overlayView?.findViewById<View>(R.id.bubbleContainer)
         val tvStatusBadge = overlayView?.findViewById<TextView>(R.id.tvStatusBadge)
+        val tvBubbleDot = overlayView?.findViewById<TextView>(R.id.tvBubbleDot)
         val tvTotalKm = overlayView?.findViewById<TextView>(R.id.tvTotalKm)
         val tvTotalMin = overlayView?.findViewById<TextView>(R.id.tvTotalMin)
         val tvOriginDist = overlayView?.findViewById<TextView>(R.id.tvOriginDist)
@@ -451,36 +583,47 @@ class RideAccessibilityService : AccessibilityService() {
             "ACCEPT" -> {
                 strokeColor = Color.parseColor("#10b981")
                 tvStatusBadge?.text = "🟢 ACEPTAR"
-                tvStatusBadge?.setBackgroundColor(Color.parseColor("#064e3b"))
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#80064e3b"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#34d399"))
             }
             "REJECT_FAR" -> {
                 strokeColor = Color.parseColor("#ef4444")
                 tvStatusBadge?.text = "🔴 RECHAZAR • LEJOS"
-                tvStatusBadge?.setBackgroundColor(Color.parseColor("#450a0a"))
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#80450a0a"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#f87171"))
             }
             "REJECT" -> {
                 strokeColor = Color.parseColor("#ef4444")
                 tvStatusBadge?.text = "🔴 RECHAZAR"
-                tvStatusBadge?.setBackgroundColor(Color.parseColor("#450a0a"))
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#80450a0a"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#f87171"))
             }
             else -> {
                 strokeColor = Color.parseColor("#f59e0b")
                 tvStatusBadge?.text = "🟡 REGULAR"
-                tvStatusBadge?.setBackgroundColor(Color.parseColor("#451a03"))
+                tvStatusBadge?.setBackgroundColor(Color.parseColor("#80451a03"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#fbbf24"))
             }
         }
 
-        // Dynamic colored border on the mini HUD
+        val density = resources.displayMetrics.density
+
+        // Dynamic colored border on translucent background (#CC0A0F1D)
         val borderBg = GradientDrawable().apply {
-            setColor(Color.parseColor("#0d1424"))
-            setStroke(3, strokeColor)
-            cornerRadius = 24f
+            setColor(Color.parseColor("#CC0A0F1D"))
+            setStroke((1.5f * density).toInt(), strokeColor)
+            cornerRadius = 14f * density
         }
         dockContainer?.background = borderBg
+
+        // Update bubble styling as well
+        val bubbleBg = GradientDrawable().apply {
+            setColor(Color.parseColor("#CC0A0F1D"))
+            setStroke((2f * density).toInt(), strokeColor)
+            cornerRadius = 24f * density
+        }
+        bubbleContainer?.background = bubbleBg
+        tvBubbleDot?.setTextColor(strokeColor)
 
         // Route Summary: Total Km & Total Min
         tvTotalKm?.text = String.format(Locale.US, "%.1f km", totalKm)
@@ -523,7 +666,9 @@ class RideAccessibilityService : AccessibilityService() {
             ensureDockAttached()
 
             val dockContainer = overlayView?.findViewById<View>(R.id.dockContainer)
+            val bubbleContainer = overlayView?.findViewById<View>(R.id.bubbleContainer)
             val tvStatusBadge = overlayView?.findViewById<TextView>(R.id.tvStatusBadge)
+            val tvBubbleDot = overlayView?.findViewById<TextView>(R.id.tvBubbleDot)
             val tvTotalKm = overlayView?.findViewById<TextView>(R.id.tvTotalKm)
             val tvTotalMin = overlayView?.findViewById<TextView>(R.id.tvTotalMin)
             val tvOriginDist = overlayView?.findViewById<TextView>(R.id.tvOriginDist)
@@ -532,16 +677,26 @@ class RideAccessibilityService : AccessibilityService() {
             val tvFairPrice = overlayView?.findViewById<TextView>(R.id.tvFairPrice)
             val tvDiffPrice = overlayView?.findViewById<TextView>(R.id.tvDiffPrice)
 
-            // Neutral border
+            val density = resources.displayMetrics.density
+
+            // Neutral translucent border
             val neutralBg = GradientDrawable().apply {
-                setColor(Color.parseColor("#0d1424"))
-                setStroke(2, Color.parseColor("#334155"))
-                cornerRadius = 24f
+                setColor(Color.parseColor("#CC0A0F1D"))
+                setStroke((1.5f * density).toInt(), Color.parseColor("#4D38BDF8"))
+                cornerRadius = 14f * density
             }
             dockContainer?.background = neutralBg
 
+            val neutralBubbleBg = GradientDrawable().apply {
+                setColor(Color.parseColor("#CC0A0F1D"))
+                setStroke((2f * density).toInt(), Color.parseColor("#38bdf8"))
+                cornerRadius = 24f * density
+            }
+            bubbleContainer?.background = neutralBubbleBg
+            tvBubbleDot?.setTextColor(Color.parseColor("#38bdf8"))
+
             tvStatusBadge?.text = "⚪ EN ESPERA"
-            tvStatusBadge?.setBackgroundColor(Color.parseColor("#1e293b"))
+            tvStatusBadge?.setBackgroundColor(Color.parseColor("#661E293B"))
             tvStatusBadge?.setTextColor(Color.parseColor("#94a3b8"))
 
             tvTotalKm?.text = "0.0 km"
