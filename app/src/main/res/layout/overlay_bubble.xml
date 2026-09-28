@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="-2dp"
             android:text="●"
-            android:textColor="#38bdf8"
+            android:textColor="#00F5D4"
             android:textSize="8sp" />
     </LinearLayout>
 
@@ -59,7 +59,7 @@
                 android:background="@drawable/bg_status_badge"
                 android:gravity="center"
                 android:paddingVertical="3dp"
-                android:text="⚪ EN ESPERA"
+                android:text="⚪ KAPTOR • ESPERA"
                 android:textColor="#94a3b8"
                 android:textSize="9.5sp"
                 android:textStyle="bold" />
@@ -95,7 +95,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="0.0 km"
-                android:textColor="#38bdf8"
+                android:textColor="#00F5D4"
                 android:textSize="11sp"
                 android:textStyle="bold" />
 
@@ -122,7 +122,7 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="3dp"
-            android:background="#25334155" />
+            android:background="#251E293B" />
 
         <!-- ROW 2: ORIGIN / PICKUP -->
         <LinearLayout
@@ -170,7 +170,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="$0"
-                android:textColor="#38bdf8"
+                android:textColor="#00F5D4"
                 android:textSize="11.5sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -222,7 +222,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="$0"
-                android:textColor="#fef08a"
+                android:textColor="#FFBE0B"
                 android:textSize="10.5sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -231,7 +231,7 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="3dp"
-            android:background="#25334155" />
+            android:background="#251E293B" />
 
         <!-- ROW 6: BALANCE / FALTANTE / SOBRANTE -->
         <TextView

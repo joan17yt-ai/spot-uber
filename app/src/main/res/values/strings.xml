@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">UberSpot Pro BGA</string>
-    <string name="accessibility_desc">Servicio de lectura automática de ofertas de viaje en pantalla para calcular rentabilidad en tiempo real.</string>
+    <string name="app_name">Kaptor</string>
+    <string name="accessibility_desc">Kaptor: Copiloto táctico de rentabilidad de viajes en tiempo real. Creado por Joan Lizarazo.</string>
 </resources>

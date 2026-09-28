@@ -15,8 +15,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -27,38 +27,48 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="UBERSPOT PRO"
-                    android:textColor="#00d2ff"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.1" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Dock Lateral Uber"
-                    android:textColor="#ffffff"
-                    android:textSize="22sp"
+                    android:letterSpacing="0.12"
+                    android:text="⚡ KAPTOR"
+                    android:textColor="#00F5D4"
+                    android:textSize="26sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📍 Bucaramanga, Colombia"
+                    android:letterSpacing="0.06"
+                    android:text="COPILOTO TÁCTICO DE RENTABILIDAD"
                     android:textColor="#94a3b8"
-                    android:textSize="12sp" />
-            </LinearLayout>
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_button_dark"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="5dp"
-                android:text="DOCK EDITION"
-                android:textColor="#38bdf8"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_badge_app"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✓ CREADO POR JOAN LIZARAZO"
+                        android:textColor="#00F5D4"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="📍 Bucaramanga, Santander"
+                    android:textColor="#64748b"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- MASTER SWITCH CARD -->
@@ -70,36 +80,27 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ESTADO DEL ASISTENTE"
-                android:textColor="#00d2ff"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08" />
-
             <Switch
                 android:id="@+id/swServiceActive"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="🟢 Asistente ACTIVO (En Turno)"
+                android:checked="true"
+                android:text="🟢 Kaptor ACTIVO (En Turno)"
                 android:textColor="#10b981"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvSwitchSub"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Ventana lateral fija activa en pantalla (0ms de delay)"
+                android:text="HUD táctico activo en pantalla (0ms de delay)"
                 android:textColor="#94a3b8"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
-        <!-- FINANCIAL STRATEGY & PICKUP FILTERS -->
+        <!-- FINANCIAL & PICKUP CONFIGURATION -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -108,123 +109,101 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="🎯 TUS PARÁMETROS DE RENTABILIDAD"
-                    android:textColor="#38bdf8"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="#064e3b"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:text="Opción B Activa"
-                    android:textColor="#34d399"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Evalúa distancia, tiempo y cercanía del origen:"
-                android:textColor="#64748b"
-                android:textSize="11sp" />
-
-            <!-- FILTER 1: MAX PICKUP DISTANCE -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="📍 Distancia Máxima a Origen / Recogida (Km):"
-                android:textColor="#f8fafc"
+                android:text="⚙️ TUS REGLAS DE GANANCIA"
+                android:textColor="#00F5D4"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Si la recogida supera este límite, la app marcará RECHAZAR"
+                android:layout_marginTop="2dp"
+                android:text="Configura tus mínimos para filtrar viajes malos automáticamente:"
                 android:textColor="#64748b"
                 android:textSize="11sp" />
 
-            <EditText
-                android:id="@+id/etMaxPickup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_input_field"
-                android:inputType="numberDecimal"
-                android:padding="12dp"
-                android:text="2.5"
-                android:textColor="#38bdf8"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <!-- FILTER 2: MIN RATE KM -->
+            <!-- FIELD 1: MAX PICKUP DISTANCE -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                android:text="Tarifa Mínima por Kilómetro (COP):"
+                android:text="Distancia Máxima de Recogida (Km):"
                 android:textColor="#cbd5e1"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <EditText
-                android:id="@+id/etMinKm"
+                android:id="@+id/etMaxPickup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/bg_input_field"
-                android:inputType="number"
-                android:padding="12dp"
-                android:text="1800"
+                android:hint="Ej: 2.5"
+                android:inputType="numberDecimal"
+                android:paddingHorizontal="12dp"
                 android:textColor="#ffffff"
-                android:textSize="15sp" />
+                android:textColorHint="#475569"
+                android:textSize="14sp" />
 
-            <!-- FILTER 3: MIN RATE MINUTE -->
+            <!-- FIELD 2: MIN PRICE PER KM -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="Tarifa Mínima por Minuto (ej: 400 = $24.000/h):"
+                android:text="Tarifa Mínima por Kilómetro (COP):"
                 android:textColor="#cbd5e1"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etMinKm"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_input_field"
+                android:hint="Ej: 1800"
+                android:inputType="number"
+                android:paddingHorizontal="12dp"
+                android:textColor="#ffffff"
+                android:textColorHint="#475569"
+                android:textSize="14sp" />
+
+            <!-- FIELD 3: MIN PRICE PER MINUTE -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Tarifa Mínima por Minuto de Trancón (COP):"
+                android:textColor="#cbd5e1"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <EditText
                 android:id="@+id/etMinTime"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/bg_input_field"
+                android:hint="Ej: 400"
                 android:inputType="number"
-                android:padding="12dp"
-                android:text="400"
+                android:paddingHorizontal="12dp"
                 android:textColor="#ffffff"
-                android:textSize="15sp" />
+                android:textColorHint="#475569"
+                android:textSize="14sp" />
 
             <!-- SAVE BUTTON -->
             <Button
                 android:id="@+id/btnSaveSettings"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="46dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_button_cyan"
-                android:text="💾 Guardar Configuración"
-                android:textColor="#070b14"
-                android:textSize="14sp"
+                android:text="Guardar Parámetros de Ganancia"
+                android:textColor="#080C14"
+                android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -240,8 +219,8 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔒 PERMISOS Y BLINDAJE EN SEGUNDO PLANO"
-                android:textColor="#f59e0b"
+                android:text="🔑 PERMISOS DE FUNCIONAMIENTO"
+                android:textColor="#00F5D4"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -249,35 +228,33 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Asegura que el dock lateral se dibuje y no se cierre en segundo plano:"
+                android:text="Requeridos para leer ofertas en pantalla y flotar sobre Uber:"
                 android:textColor="#64748b"
                 android:textSize="11sp" />
 
             <Button
                 android:id="@+id/btnPermAccess"
                 android:layout_width="match_parent"
-                android:layout_height="46dp"
-                android:layout_marginTop="10dp"
+                android:layout_height="44dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/bg_button_dark"
                 android:gravity="start|center_vertical"
                 android:paddingHorizontal="14dp"
-                android:text="1. Activar Servicio de Accesibilidad (OBLIGATORIO)"
-                android:textColor="#00d2ff"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:text="1. Activar Servicio Accesibilidad (Kaptor)"
+                android:textColor="#cbd5e1"
+                android:textSize="12sp" />
 
             <Button
                 android:id="@+id/btnBatteryOptimize"
                 android:layout_width="match_parent"
-                android:layout_height="46dp"
+                android:layout_height="44dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_button_dark"
                 android:gravity="start|center_vertical"
                 android:paddingHorizontal="14dp"
-                android:text="2. Batería en 'Sin Restricciones' (Evita cierres en Xiaomi)"
-                android:textColor="#10b981"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:text="2. Batería: Sin Restricciones (Anticierre Xiaomi)"
+                android:textColor="#cbd5e1"
+                android:textSize="12sp" />
 
             <Button
                 android:id="@+id/btnPermOverlay"
@@ -313,7 +290,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Simula una oferta en la ventana lateral (vuelve a 0 en 10s):"
+                android:text="Simula una oferta en el HUD lateral (vuelve a 0 en 15s):"
                 android:textColor="#64748b"
                 android:textSize="11sp" />
 
@@ -323,18 +300,95 @@
                 android:layout_height="46dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_button_dark"
-                android:text="🚗 Simular Oferta en Dock Lateral"
-                android:textColor="#10b981"
+                android:text="🚗 Simular Oferta en HUD Kaptor"
+                android:textColor="#00F5D4"
                 android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- OFFICIAL CREATOR & AUTHENTICITY CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_card_master"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="🛡️ AUTORÍA Y LICENCIA OFICIAL"
+                    android:textColor="#00F5D4"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_badge_app"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="VERIFICADO"
+                    android:textColor="#00F5D4"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="KAPTOR Driver • Versión 1.0 Pro"
+                android:textColor="#ffffff"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Creado y Desarrollado por: Joan Lizarazo"
+                android:textColor="#00F5D4"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Algoritmo de cálculo de rentabilidad en tiempo real para conductores de plataformas en Bucaramanga y Colombia."
+                android:textColor="#94a3b8"
+                android:textSize="11sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="10dp"
+                android:background="#1e293b" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📍 Bucaramanga, Santander, Colombia"
+                android:textColor="#64748b"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- FOOTER SIGNATURE -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginVertical="24dp"
             android:gravity="center"
-            android:text="UberSpot Pro • Dock Lateral • Bucaramanga"
+            android:text="⚡ KAPTOR • Creado por Joan Lizarazo • Bucaramanga"
             android:textColor="#475569"
             android:textSize="11sp" />
 

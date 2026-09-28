@@ -29,7 +29,7 @@ class RideAccessibilityService : AccessibilityService() {
     companion object {
         var instance: RideAccessibilityService? = null
         const val NOTIFICATION_ID = 1001
-        const val CHANNEL_ID = "uberspot_pro_channel"
+        const val CHANNEL_ID = "kaptor_channel"
     }
 
     private lateinit var prefs: SharedPreferences
@@ -55,7 +55,7 @@ class RideAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
-        prefs = getSharedPreferences("UberSpotPrefs", Context.MODE_PRIVATE)
+        prefs = getSharedPreferences("KaptorPrefs", Context.MODE_PRIVATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
         updateStatusNotification(prefs.getBoolean("service_enabled", true))
@@ -80,16 +80,16 @@ class RideAccessibilityService : AccessibilityService() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     CHANNEL_ID,
-                    "UberSpot Pro Asistente",
+                    "Kaptor Monitoreo",
                     NotificationManager.IMPORTANCE_LOW
                 ).apply {
-                    description = "Mantiene activo el asistente de viajes durante tu turno"
+                    description = "Copiloto táctico de Joan Lizarazo"
                 }
                 notificationManager.createNotificationChannel(channel)
             }
 
-            val title = if (isEnabled) "🟢 UberSpot Pro Activo" else "⚪ UberSpot Pro Pausado"
-            val text = if (isEnabled) "Dock lateral Uber activo en tiempo real" else "Asistente en descanso. Cero consumo de batería."
+            val title = if (isEnabled) "⚡ Kaptor Activo" else "⚪ Kaptor Pausado"
+            val text = if (isEnabled) "Monitoreando ofertas de viaje (Algoritmo de Joan Lizarazo)" else "Asistente en reposo. Cero consumo de batería."
 
             val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Notification.Builder(this, CHANNEL_ID)
@@ -587,19 +587,19 @@ class RideAccessibilityService : AccessibilityService() {
                 tvStatusBadge?.setTextColor(Color.parseColor("#34d399"))
             }
             "REJECT_FAR" -> {
-                strokeColor = Color.parseColor("#ef4444")
+                strokeColor = Color.parseColor("#FF3366")
                 tvStatusBadge?.text = "🔴 RECHAZAR • LEJOS"
                 tvStatusBadge?.setBackgroundColor(Color.parseColor("#80450a0a"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#f87171"))
             }
             "REJECT" -> {
-                strokeColor = Color.parseColor("#ef4444")
+                strokeColor = Color.parseColor("#FF3366")
                 tvStatusBadge?.text = "🔴 RECHAZAR"
                 tvStatusBadge?.setBackgroundColor(Color.parseColor("#80450a0a"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#f87171"))
             }
             else -> {
-                strokeColor = Color.parseColor("#f59e0b")
+                strokeColor = Color.parseColor("#FFBE0B")
                 tvStatusBadge?.text = "🟡 REGULAR"
                 tvStatusBadge?.setBackgroundColor(Color.parseColor("#80451a03"))
                 tvStatusBadge?.setTextColor(Color.parseColor("#fbbf24"))
@@ -608,9 +608,9 @@ class RideAccessibilityService : AccessibilityService() {
 
         val density = resources.displayMetrics.density
 
-        // Dynamic colored border on translucent background (#CC0A0F1D)
+        // Dynamic colored border on translucent background (#D9080C14)
         val borderBg = GradientDrawable().apply {
-            setColor(Color.parseColor("#CC0A0F1D"))
+            setColor(Color.parseColor("#D9080C14"))
             setStroke((1.5f * density).toInt(), strokeColor)
             cornerRadius = 14f * density
         }
@@ -618,7 +618,7 @@ class RideAccessibilityService : AccessibilityService() {
 
         // Update bubble styling as well
         val bubbleBg = GradientDrawable().apply {
-            setColor(Color.parseColor("#CC0A0F1D"))
+            setColor(Color.parseColor("#D9080C14"))
             setStroke((2f * density).toInt(), strokeColor)
             cornerRadius = 24f * density
         }
@@ -633,15 +633,17 @@ class RideAccessibilityService : AccessibilityService() {
         val pickupFormatted = String.format(Locale.US, "%.1f km", pickupKm)
         tvOriginDist?.text = pickupFormatted
         if (isPickupTooFar) {
-            tvOriginDist?.setTextColor(Color.parseColor("#ef4444"))
+            tvOriginDist?.setTextColor(Color.parseColor("#FF3366"))
         } else {
             tvOriginDist?.setTextColor(Color.parseColor("#10b981"))
         }
 
         // Rates
         tvPerKm?.text = "\$$perKm"
+        tvPerKm?.setTextColor(Color.parseColor("#00F5D4"))
         tvPerMin?.text = "\$$perMin/m"
         tvFairPrice?.text = "\$$fairPrice"
+        tvFairPrice?.setTextColor(Color.parseColor("#FFBE0B"))
 
         // Balance
         if (diffPrice >= 0) {
@@ -650,7 +652,7 @@ class RideAccessibilityService : AccessibilityService() {
         } else {
             val absDiff = if (diffPrice < 0) -diffPrice else diffPrice
             tvDiffPrice?.text = "FALTAN: -\$$absDiff"
-            tvDiffPrice?.setTextColor(Color.parseColor("#ef4444"))
+            tvDiffPrice?.setTextColor(Color.parseColor("#FF3366"))
         }
 
         // 15 seconds auto-reset back to zero/idle
@@ -681,21 +683,21 @@ class RideAccessibilityService : AccessibilityService() {
 
             // Neutral translucent border
             val neutralBg = GradientDrawable().apply {
-                setColor(Color.parseColor("#CC0A0F1D"))
+                setColor(Color.parseColor("#D9080C14"))
                 setStroke((1.5f * density).toInt(), Color.parseColor("#4D38BDF8"))
                 cornerRadius = 14f * density
             }
             dockContainer?.background = neutralBg
 
             val neutralBubbleBg = GradientDrawable().apply {
-                setColor(Color.parseColor("#CC0A0F1D"))
-                setStroke((2f * density).toInt(), Color.parseColor("#38bdf8"))
+                setColor(Color.parseColor("#D9080C14"))
+                setStroke((2f * density).toInt(), Color.parseColor("#00F5D4"))
                 cornerRadius = 24f * density
             }
             bubbleContainer?.background = neutralBubbleBg
-            tvBubbleDot?.setTextColor(Color.parseColor("#38bdf8"))
+            tvBubbleDot?.setTextColor(Color.parseColor("#00F5D4"))
 
-            tvStatusBadge?.text = "⚪ EN ESPERA"
+            tvStatusBadge?.text = "⚪ KAPTOR • ESPERA"
             tvStatusBadge?.setBackgroundColor(Color.parseColor("#661E293B"))
             tvStatusBadge?.setTextColor(Color.parseColor("#94a3b8"))
 

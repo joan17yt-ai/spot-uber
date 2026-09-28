@@ -23,7 +23,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val prefs = getSharedPreferences("UberSpotPrefs", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("KaptorPrefs", Context.MODE_PRIVATE)
 
         val swActive = findViewById<Switch>(R.id.swServiceActive)
         val tvSwitchSub = findViewById<TextView>(R.id.tvSwitchSub)
@@ -56,7 +56,7 @@ class MainActivity : Activity() {
             
             RideAccessibilityService.instance?.updateStatusNotification(isChecked)
             
-            val msg = if (isChecked) "🟢 Asistente ACTIVADO (En Turno)" else "⚪ Asistente PAUSADO (En Descanso)"
+            val msg = if (isChecked) "🟢 Kaptor ACTIVADO (En Turno)" else "⚪ Kaptor PAUSADO (En Descanso)"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -92,7 +92,7 @@ class MainActivity : Activity() {
         btnPermAccess.setOnClickListener {
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             startActivity(intent)
-            Toast.makeText(this, "Activa 'UberSpot Pro' en Accesibilidad", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Activa 'Kaptor' en Accesibilidad", Toast.LENGTH_LONG).show()
         }
 
         // 4. BATTERY UNRESTRICTED BUTTON (FOR XIAOMI / LONG SHIFTS)
@@ -116,7 +116,7 @@ class MainActivity : Activity() {
                     verdict = "REJECT_FAR",
                     isPickupTooFar = true
                 )
-                Toast.makeText(this, "Simulando oferta en Mini HUD (vuelve a 0 en 15s)...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Simulando oferta en HUD Kaptor (vuelve a 0 en 15s)...", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "⚠️ Por favor activa primero el 'Servicio de Accesibilidad' abajo", Toast.LENGTH_LONG).show()
                 val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
@@ -151,11 +151,11 @@ class MainActivity : Activity() {
 
     private fun updateMasterSwitchState(sw: Switch, tvSub: TextView, isChecked: Boolean) {
         if (isChecked) {
-            sw.text = "🟢 Asistente ACTIVO (En Turno)"
+            sw.text = "🟢 Kaptor ACTIVO (En Turno)"
             sw.setTextColor(Color.parseColor("#10b981"))
             tvSub.text = "Mini HUD activo en pantalla (0ms de delay)"
         } else {
-            sw.text = "⚪ Asistente PAUSADO (En Descanso)"
+            sw.text = "⚪ Kaptor PAUSADO (En Descanso)"
             sw.setTextColor(Color.parseColor("#94a3b8"))
             tvSub.text = "Asistente en reposo. Cero consumo de batería."
         }
